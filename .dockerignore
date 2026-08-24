@@ -1,0 +1,47 @@
+# Keep the build context small and, more importantly, HERMETIC: host build artefacts must
+# never leak into an image. A Windows-built obj/ contains absolute host paths and would
+# confuse `dotnet publish` inside a Linux container.
+
+# ---------- .NET build output ----------
+**/bin/
+**/obj/
+**/TestResults/
+**/*.trx
+**/coverage/
+
+# ---------- Node / Next.js ----------
+**/node_modules/
+**/.next/
+**/out/
+**/.turbo/
+**/dist/
+**/*.tsbuildinfo
+**/next-env.d.ts
+
+# ---------- Playwright ----------
+playwright-report/
+test-results/
+blob-report/
+
+# ---------- Secrets and local config ----------
+.env
+.env.*
+!.env.example
+**/.env.local
+**/.env.*.local
+docker-compose.override.yml
+
+# ---------- VCS, IDE, docs ----------
+.git/
+.github/
+.gitignore
+.gitattributes
+.vs/
+.vscode/
+.idea/
+docs/
+README.md
+**/.DS_Store
+
+# ---------- Tests are not needed to build a runtime image ----------
+tests/

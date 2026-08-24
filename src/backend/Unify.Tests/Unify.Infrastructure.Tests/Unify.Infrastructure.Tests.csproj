@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Unify.Infrastructure.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <!--
+    Real integration tests: the DbUp migrations and the hand-written Dapper SQL are executed
+    against an actual Postgres. Two ways to get one, resolved at run time by TestDatabase:
+      1. UNIFY_TEST_POSTGRES - a connection string to an existing server (how CI does it,
+         using a GitHub Actions service container).
+      2. Otherwise a throwaway Testcontainers.PostgreSql container, which needs a Docker daemon.
+    With neither available the tests report as skipped rather than failing.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\Unify.Infrastructure\Unify.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Dapper" />
+    <PackageReference Include="Npgsql" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+  </ItemGroup>
+
+</Project>

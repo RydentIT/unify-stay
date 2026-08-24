@@ -1,0 +1,23 @@
+{
+  "name": "@unify/config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared ESLint, TypeScript and Tailwind configuration for the UnifyStay portals.",
+  "exports": {
+    "./eslint/base": "./eslint/base.js",
+    "./eslint/next": "./eslint/next.js",
+    "./eslint/react-library": "./eslint/react-library.js",
+    "./tsconfig/base.json": "./tsconfig/base.json",
+    "./tsconfig/nextjs.json": "./tsconfig/nextjs.json",
+    "./tsconfig/react-library.json": "./tsconfig/react-library.json",
+    "./tailwind/base.css": "./tailwind/base.css"
+  },
+  "dependencies": {
+    "@eslint/js": "9.39.5",
+    "@next/eslint-plugin-next": "16.3.2",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "globals": "16.5.0",
+    "typescript-eslint": "8.67.0"
+  }
+}

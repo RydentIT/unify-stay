@@ -1,0 +1,24 @@
+{
+  "name": "@unify/api-client",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Typed client for the UnifyStay backend API.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rimraf .turbo coverage"
+  },
+  "devDependencies": {
+    "@unify/config": "*",
+    "eslint": "9.39.5",
+    "rimraf": "6.1.3",
+    "typescript": "5.9.3",
+    "vitest": "4.1.11"
+  }
+}

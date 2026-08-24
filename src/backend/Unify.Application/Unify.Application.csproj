@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Unify.Application</RootNamespace>
+  </PropertyGroup>
+
+  <!--
+    References point inward only. Unify.Application knows about Unify.Domain and nothing
+    else: every capability it needs from the outside world (database, hashing, tokens,
+    email, audit sink, clock) is declared here as an interface under Abstractions/ and
+    implemented by Unify.Infrastructure.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\Unify.Domain\Unify.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Unify.Application.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+</Project>

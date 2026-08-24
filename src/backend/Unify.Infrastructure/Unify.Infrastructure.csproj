@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Unify.Infrastructure</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Unify.Application\Unify.Application.csproj" />
+    <ProjectReference Include="..\Unify.Domain\Unify.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Next" />
+    <PackageReference Include="Dapper" />
+    <PackageReference Include="dbup-postgresql" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
+    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" />
+    <PackageReference Include="Npgsql" />
+  </ItemGroup>
+
+  <!--
+    The migration scripts are the single source of truth in database/sql/. Embedding them
+    (rather than reading them off disk) means the API container carries its own migrations
+    and DbUp works identically in Docker, in CI and on a developer machine.
+    Resource names become Unify.Infrastructure.Migrations.Scripts.NNNN_*.sql, and DbUp
+    applies them in ordinal name order - hence the zero-padded numeric prefix convention.
+  -->
+  <ItemGroup>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)..\..\..\database\sql\*.sql"
+                      LinkBase="Migrations\Scripts" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Unify.Infrastructure.Tests" />
+  </ItemGroup>
+
+</Project>

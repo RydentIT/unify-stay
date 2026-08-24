@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Unify.Application.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <!-- Fast, in-memory tests: handler logic and the dispatcher pipeline, all ports mocked. -->
+  <ItemGroup>
+    <ProjectReference Include="..\Unify.Application\Unify.Application.csproj" />
+    <ProjectReference Include="..\Unify.Domain\Unify.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="NSubstitute" />
+  </ItemGroup>
+
+</Project>

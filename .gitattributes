@@ -1,0 +1,19 @@
+# Normalise line endings. The repo is authored on Windows but built and formatted on Linux
+# CI runners, and .editorconfig declares end_of_line = lf - so the working tree must be LF
+# everywhere or `dotnet format --verify-no-changes` disagrees with itself across platforms.
+* text=auto eol=lf
+
+# Binary assets must never be touched.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.pdf binary
+
+# Windows-only scripts genuinely need CRLF.
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+*.bat text eol=crlf

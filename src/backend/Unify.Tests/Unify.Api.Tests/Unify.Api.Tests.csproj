@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Unify.Api.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <!--
+    Thin integration tests over the real HTTP pipeline via WebApplicationFactory. No database
+    is involved: the one port that would need it (IDatabaseHealthProbe) is replaced with a
+    stub, so these stay fast enough to run on every push alongside the unit tests.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\Unify.Api\Unify.Api.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="NSubstitute" />
+  </ItemGroup>
+
+</Project>

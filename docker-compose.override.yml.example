@@ -1,0 +1,23 @@
+# Local-only tweaks. Copy to docker-compose.override.yml, which is gitignored and picked up
+# automatically by `docker compose up` - so your machine-specific changes never reach a PR.
+#
+#   cp docker-compose.override.yml.example docker-compose.override.yml
+
+services:
+  # Example: expose Postgres on a different host port because 5432 is already taken.
+  postgres:
+    ports:
+      - "55432:5432"
+
+  # Example: more verbose API logs, and skip startup migrations so you can run them by hand.
+  api:
+    environment:
+      Logging__LogLevel__Default: Debug
+      Logging__LogLevel__Unify: Trace
+      Database__RunMigrationsOnStartup: "false"
+
+  # Example: stop the portals from starting at all while you work on the backend only.
+  # user-portal:
+  #   profiles: ["donotstart"]
+  # admin-portal:
+  #   profiles: ["donotstart"]

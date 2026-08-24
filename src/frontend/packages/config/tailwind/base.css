@@ -1,0 +1,8 @@
+/*
+ * Shared Tailwind entry point for both portals.
+ *
+ * Deliberately bare: no design tokens, no theme extension, no component layer. Final Figma
+ * designs are still pending, and anything invented here would only have to be unpicked. When
+ * the design system lands it belongs in this file, so both apps pick it up at once.
+ */
+@import "tailwindcss";

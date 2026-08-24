@@ -1,0 +1,5 @@
+{
+  "extends": "@unify/config/tsconfig/react-library.json",
+  "include": ["src/**/*.ts", "src/**/*.tsx", "tests/**/*.ts", "tests/**/*.tsx", "vitest.setup.ts"],
+  "exclude": ["node_modules", "dist", "coverage"]
+}

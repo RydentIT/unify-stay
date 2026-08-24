@@ -1,0 +1,157 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/backend/**'
+      - 'database/sql/**'
+      - '.docker/Dockerfile'
+      - 'UnifyStay.sln'
+      - 'global.json'
+      - 'Directory.Build.props'
+      - 'Directory.Packages.props'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    paths:
+      - 'src/backend/**'
+      - 'database/sql/**'
+      - '.docker/Dockerfile'
+      - 'UnifyStay.sln'
+      - 'global.json'
+      - 'Directory.Build.props'
+      - 'Directory.Packages.props'
+      - '.github/workflows/backend-ci.yml'
+
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  build-and-test:
+    name: Build, format and fast tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Explicit SDK, not the runner's preinstalled default: the repo targets net9.0 and the
+      # hosted image ships whatever it ships.
+      - name: Set up .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/Directory.Packages.props', '**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Restore
+        run: dotnet restore UnifyStay.sln
+
+      - name: Build
+        run: dotnet build UnifyStay.sln --configuration Release --no-restore
+
+      - name: Verify formatting
+        run: dotnet format UnifyStay.sln --verify-no-changes --verbosity minimal
+
+      # Application + Api only. These need no external services, so they stay fast and gate
+      # every push; the database-backed suite runs in the job below.
+      - name: Test (Application)
+        run: >-
+          dotnet test src/backend/Unify.Application.Tests/Unify.Application.Tests.csproj
+          --configuration Release --no-build --logger "trx;LogFileName=application.trx"
+          --results-directory TestResults
+
+      - name: Test (Api)
+        run: >-
+          dotnet test src/backend/Unify.Api.Tests/Unify.Api.Tests.csproj
+          --configuration Release --no-build --logger "trx;LogFileName=api.trx"
+          --results-directory TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: TestResults/
+          if-no-files-found: ignore
+
+  integration-tests:
+    name: Integration tests (Postgres)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: unify_test
+          POSTGRES_USER: unify
+          POSTGRES_PASSWORD: unify
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U unify -d unify_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/Directory.Packages.props', '**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      # UNIFY_TEST_POSTGRES makes the fixture use this service container instead of starting
+      # its own Testcontainers instance - one less Docker-in-Docker layer on the runner.
+      - name: Test (Infrastructure)
+        env:
+          UNIFY_TEST_POSTGRES: "Host=localhost;Port=5432;Database=unify_test;Username=unify;Password=unify"
+        run: >-
+          dotnet test src/backend/Unify.Infrastructure.Tests/Unify.Infrastructure.Tests.csproj
+          --configuration Release --logger "trx;LogFileName=infrastructure.trx"
+          --results-directory TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-integration-test-results
+          path: TestResults/
+          if-no-files-found: ignore
+
+  docker-image:
+    name: Docker image builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      # Verification only - nothing is pushed. A registry is chosen when the cloud target is.
+      - name: Build API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: .docker/Dockerfile
+          push: false
+          load: false
+          tags: unify-api:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

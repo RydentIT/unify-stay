@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Innermost layer. Deliberately has NO project references and NO package references:
+    if this project ever needs a dependency, that is a signal the concept belongs in
+    Unify.Application instead.
+  -->
+  <PropertyGroup>
+    <RootNamespace>Unify.Domain</RootNamespace>
+  </PropertyGroup>
+
+</Project>

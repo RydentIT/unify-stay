@@ -1,0 +1,55 @@
+# ---------- .NET ----------
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+TestResults/
+coverage/
+*.coverage
+*.trx
+.vs/
+
+# ---------- Node / Next.js ----------
+node_modules/
+.next/
+out/
+.turbo/
+dist/
+build/
+*.tsbuildinfo
+.eslintcache
+next-env.d.ts
+
+# ---------- Playwright ----------
+playwright-report/
+test-results/
+blob-report/
+.playwright/
+
+# ---------- Environment / secrets ----------
+# Never commit real config. Only the *.example files are tracked.
+.env
+.env.*
+!.env.example
+.env.local
+.env.*.local
+!.env.local.example
+appsettings.Local.json
+appsettings.*.Local.json
+*.pfx
+*.p12
+
+# ---------- docker-compose local overrides ----------
+docker-compose.override.yml
+!docker-compose.override.yml.example
+
+# ---------- IDE / OS ----------
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
