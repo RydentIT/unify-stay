@@ -11,27 +11,23 @@ test.describe("user portal smoke", () => {
     await page.goto("/register");
 
     await expect(page.getByRole("heading", { name: "Create an account" })).toBeVisible();
+    await expect(page.getByLabel("Name")).toBeVisible();
     await expect(page.getByLabel("Email")).toBeVisible();
-    await expect(page.getByLabel("Display name")).toBeVisible();
-    await expect(page.getByLabel("Password")).toBeVisible();
+    await expect(page.getByLabel("Password", { exact: true })).toBeVisible();
   });
 
-  test("reaches the backend through the api client", async ({ page }) => {
+  test("validates client-side before reaching the API", async ({ page }) => {
     await page.goto("/register");
+    await page.getByRole("button", { name: "Register" }).click();
 
-    await page.getByLabel("Email").fill("e2e@example.com");
-    await page.getByLabel("Display name").fill("End To End");
-    await page.getByLabel("Password").fill("correct-horse-battery-staple");
-    await page.getByRole("checkbox").check();
+    // No request is made: the zod resolver blocks submission.
+    await expect(page.getByText("Name is required.")).toBeVisible();
+    await expect(page.getByText("You must accept the terms of service.")).toBeVisible();
+  });
 
-    const [response] = await Promise.all([
-      page.waitForResponse((res) => res.url().includes("/api/v1/auth/register")),
-      page.getByRole("button", { name: "Register" }).click(),
-    ]);
+  test("protects the profile route from anonymous visitors", async ({ page }) => {
+    await page.goto("/profile");
 
-    // SCAFFOLD: the handler is a stub, so a reachable backend answers 501. Change this to 201
-    // when the Register module lands - a 0 or a network error here means the stack is broken.
-    expect(response.status()).toBe(501);
-    await expect(page.getByRole("alert")).toContainText(/not built yet/i);
+    await expect(page).toHaveURL(/\/login$/);
   });
 });

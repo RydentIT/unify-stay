@@ -70,7 +70,13 @@ public sealed class PostgresFixture : IAsyncLifetime
         await connection.OpenAsync();
 
         await using var command = new NpgsqlCommand(
-            "TRUNCATE TABLE audit_logs, user_roles, auth_providers, users CASCADE;",
+            """
+            TRUNCATE TABLE audit_logs, user_suspensions, role_upgrade_requests,
+                           pending_email_changes, email_verification_tokens,
+                           password_reset_tokens, sessions, login_attempts,
+                           user_roles, auth_providers, users
+            CASCADE;
+            """,
             connection);
 
         await command.ExecuteNonQueryAsync();

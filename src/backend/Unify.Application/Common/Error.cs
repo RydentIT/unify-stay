@@ -34,9 +34,18 @@ public sealed record Error(string Code, string Message, ErrorType Type)
         new(code, message, ErrorType.Unauthorized);
 
     /// <summary>
-    /// Used by the stub handlers that exist purely to prove the layers are wired together.
-    /// Every one of these is expected to disappear as the real modules land.
+    /// Authenticated, but not permitted. Distinct from <see cref="Unauthorized"/>: re-signing in
+    /// would not help.
     /// </summary>
+    public static Error Forbidden(string code, string message) =>
+        new(code, message, ErrorType.Forbidden);
+
+    public static Error RateLimited(string code, string message) =>
+        new(code, message, ErrorType.RateLimited);
+
+    public static Error Unexpected(string code, string message) =>
+        new(code, message, ErrorType.Unexpected);
+
     public static Error NotImplemented(string code, string message) =>
         new(code, message, ErrorType.NotImplemented);
 }

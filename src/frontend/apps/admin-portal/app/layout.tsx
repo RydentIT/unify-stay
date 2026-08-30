@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import type { ReactNode } from "react";
+
+import { AdminNav } from "@/components/AdminNav";
 
 import "./globals.css";
 
@@ -15,10 +16,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body className="mx-auto flex max-w-2xl flex-col gap-6 p-6">
-        <header className="flex flex-wrap gap-4 border-b pb-3 text-sm">
-          <Link href="/login">Log in</Link>
-          <Link href="/dashboard">Dashboard</Link>
-        </header>
+        <AdminNav />
         <main className="flex flex-col gap-4">{children}</main>
       </body>
     </html>

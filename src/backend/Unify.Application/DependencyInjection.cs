@@ -3,6 +3,10 @@ using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Unify.Application.Abstractions.Messaging;
+using Unify.Application.Features.Authentication.Login;
+using Unify.Application.Features.Bootstrap;
+using Unify.Application.Features.Profile;
+using Unify.Application.Features.Settings;
 using Unify.Application.Messaging;
 using Unify.Application.Messaging.Behaviors;
 
@@ -27,6 +31,14 @@ public static class DependencyInjection
 
         AddImplementationsOfOpenInterface(services, assembly, typeof(IRequestHandler<,>));
         AddImplementationsOfOpenInterface(services, assembly, typeof(IValidator<>));
+
+        // Internal collaborators shared by several handlers. Registered explicitly rather than
+        // by convention because they implement no marker interface to scan for.
+        services.TryAddScoped<CurrentUserAccessor>();
+        services.TryAddScoped<LoginLockoutPolicy>();
+        services.TryAddScoped<LoginSessionIssuer>();
+        services.TryAddScoped<UpgradeRequestService>();
+        services.TryAddScoped<AdminBootstrapper>();
 
         return services;
     }

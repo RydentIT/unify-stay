@@ -13,7 +13,7 @@
     With neither available the tests report as skipped rather than failing.
   -->
   <ItemGroup>
-    <ProjectReference Include="..\Unify.Infrastructure\Unify.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Unify.Infrastructure\Unify.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

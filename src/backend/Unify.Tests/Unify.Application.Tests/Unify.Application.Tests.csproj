@@ -6,8 +6,8 @@
 
   <!-- Fast, in-memory tests: handler logic and the dispatcher pipeline, all ports mocked. -->
   <ItemGroup>
-    <ProjectReference Include="..\Unify.Application\Unify.Application.csproj" />
-    <ProjectReference Include="..\Unify.Domain\Unify.Domain.csproj" />
+    <ProjectReference Include="..\..\Unify.Application\Unify.Application.csproj" />
+    <ProjectReference Include="..\..\Unify.Domain\Unify.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>

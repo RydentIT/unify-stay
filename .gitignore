@@ -39,6 +39,10 @@ blob-report/
 .env.*.local
 !.env.local.example
 appsettings.Local.json
+
+# Locally stored uploads (verification documents, avatars). The real store is
+# IFileStorageService; this is only where the local-disk implementation writes.
+**/App_Data/
 appsettings.*.Local.json
 *.pfx
 *.p12

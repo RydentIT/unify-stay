@@ -69,7 +69,7 @@ describe("ApiClient", () => {
     const api = createUnifyApi({ baseUrl: "http://api.test", fetch: fetchMock });
 
     const error = await api.auth
-      .register({ email: "nope", password: "short", displayName: "", acceptedTerms: false })
+      .register({ firstName: "", lastName: "", email: "nope", password: "short", contactNumber: "", acceptedTerms: false })
       .catch((caught: unknown) => caught);
 
     expect(error).toBeInstanceOf(ApiError);

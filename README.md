@@ -92,9 +92,10 @@ docker compose up --build
 | --- | --- |
 | user-portal | <http://localhost:3000> |
 | admin-portal | <http://localhost:3001> |
-| API | <http://localhost:5000> |
-| API readiness | <http://localhost:5000/health> |
-| API OpenAPI (Development) | <http://localhost:5000/openapi/v1.json> |
+| API | <http://localhost:8000> |
+| API readiness | <http://localhost:8000/health> |
+| API OpenAPI (Development) | <http://localhost:8000/openapi/v1.json> |
+| API Swagger UI (Development) | <http://localhost:8000/swagger> |
 | Postgres | `localhost:5432` |
 
 Postgres data lives in the named volume `postgres-data`. `docker compose down -v` throws it
@@ -114,7 +115,7 @@ cp docker-compose.override.yml.example docker-compose.override.yml
 # Backend (needs a Postgres somewhere)
 export ConnectionStrings__Unify="Host=localhost;Database=unify;Username=unify;Password=..."
 export Jwt__SigningKey="at-least-32-bytes-of-random-material"
-export Jwt__Issuer="https://localhost:5000" Jwt__Audience="unify-stay"
+export Jwt__Issuer="https://localhost:8001" Jwt__Audience="unify-stay"
 dotnet run --project src/backend/Unify.Api
 
 # Frontend
@@ -214,7 +215,38 @@ carries its own migrations and behaves identically on a laptop, in CI and in a d
 2. **Never edit a script that has shipped.** DbUp journals by filename, so an edited file is
    never re-applied. Add a new numbered script instead.
 
-Current schema: `users`, `auth_providers`, `user_roles`, `audit_logs`.
+Current schema: `users`, `roles`, `user_roles`, `auth_providers`, `login_attempts`, `sessions`,
+`password_reset_tokens`, `email_verification_tokens`, `pending_email_changes`,
+`role_upgrade_requests`, `verification_documents`, `audit_logs`.
+
+---
+
+## Admin bootstrap
+
+There is no seeded Admin account and no implicit "first user becomes Admin" behaviour. The
+first Admin is created by an explicit CLI command:
+
+```bash
+ADMIN_BOOTSTRAP_EMAIL=admin@example.com \
+ADMIN_BOOTSTRAP_PASSWORD=a-strong-password-here \
+  dotnet run --project src/backend/Unify.Api -- bootstrap-admin
+```
+
+Both environment variables are read only for this one invocation — never by the running web
+host — and are documented as placeholders in [`.env.example`](./.env.example). If you keep
+them in your local `.env`, the command above picks them up automatically; nothing else does.
+
+What it does:
+
+- If an Admin already exists, it logs that and exits. **Safe to run more than once** — it
+  never creates a second Admin.
+- Otherwise it creates the account (unverified, exactly like a normal registration), hashes
+  the password with the same `IPasswordHasher` every other account uses, grants the Admin
+  role, and sends a verification email through the same flow `POST /api/auth/register` uses
+  (`SendVerificationEmailCommand` — there is no separate bootstrap-only verification path).
+- The account **cannot sign in until that email is verified** (`LOG-004` blocks any
+  unverified account, Admin included) — click the link, then sign in normally at
+  `/login` on the admin portal.
 
 ---
 

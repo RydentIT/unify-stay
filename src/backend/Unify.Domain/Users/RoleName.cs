@@ -1,13 +1,18 @@
 namespace Unify.Domain.Users;
 
 /// <summary>
-/// Roles carried as claims on the access token. Persisted by name (not by ordinal) in the
-/// user_roles table so that reordering this enum cannot silently re-grant permissions.
+/// The seeded roles. Values match the fixed ids in the roles table (migration 0002) so the
+/// enum and the catalogue cannot drift apart.
 /// </summary>
 public enum RoleName
 {
-    Guest = 0,
-    Host = 1,
-    Support = 2,
+    /// <summary>Default role granted at registration (REG-007).</summary>
+    Student = 1,
+
+    /// <summary>Granted only by an approved upgrade request (SET-009).</summary>
+    PropertyOwner = 2,
+
     Admin = 3,
+
+    Staff = 4,
 }

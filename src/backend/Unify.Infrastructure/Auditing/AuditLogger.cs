@@ -8,48 +8,45 @@ using Unify.Domain.Auditing;
 namespace Unify.Infrastructure.Auditing;
 
 /// <summary>
-/// Writes audit entries to the database. Failures are logged and swallowed: an audit write
-/// must never be the reason a user-facing operation fails. If that trade-off ever becomes
-/// unacceptable for a given action, that action should write the entry in its own transaction.
+/// Writes audit entries to the database.
+///
+/// Failures are logged and swallowed: an audit write must never be the reason a user-facing
+/// operation fails. The trade-off is explicit - if an action ever needs a guaranteed trail, it
+/// should write the entry inside its own transaction rather than through this logger.
 /// </summary>
 internal sealed class AuditLogger : IAuditLogger
 {
     private static readonly JsonSerializerOptions MetadataJsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly IAuditLogRepository _repository;
-    private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly IDateTimeProvider _clock;
     private readonly ILogger<AuditLogger> _logger;
 
     public AuditLogger(
         IAuditLogRepository repository,
-        IDateTimeProvider dateTimeProvider,
+        IDateTimeProvider clock,
         ILogger<AuditLogger> logger)
     {
         _repository = repository;
-        _dateTimeProvider = dateTimeProvider;
+        _clock = clock;
         _logger = logger;
     }
 
-    public async Task LogAsync(
-        string action,
-        Guid? actorUserId = null,
-        string? subjectType = null,
-        string? subjectId = null,
-        object? metadata = null,
-        CancellationToken cancellationToken = default)
+    public async Task LogAsync(AuditEvent auditEvent, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(auditEvent);
+
         var entry = new AuditLogEntry(
             Guid.CreateVersion7(),
-            action,
-            actorUserId,
-            subjectType,
-            subjectId,
-            ipAddress: null,
-            userAgent: null,
-            metadataJson: metadata is null
+            auditEvent.ActionType,
+            _clock.UtcNow,
+            auditEvent.UserId,
+            auditEvent.Email,
+            auditEvent.Provider,
+            auditEvent.IpAddress,
+            auditEvent.FieldsChanged is null
                 ? null
-                : JsonSerializer.Serialize(metadata, MetadataJsonOptions),
-            occurredAtUtc: _dateTimeProvider.UtcNow);
+                : JsonSerializer.Serialize(auditEvent.FieldsChanged, MetadataJsonOptions));
 
         try
         {
@@ -57,7 +54,10 @@ internal sealed class AuditLogger : IAuditLogger
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            _logger.LogError(ex, "Failed to write audit entry for action {Action}.", action);
+            _logger.LogError(
+                ex,
+                "Failed to write audit entry for action {ActionType}.",
+                auditEvent.ActionType);
         }
     }
 }

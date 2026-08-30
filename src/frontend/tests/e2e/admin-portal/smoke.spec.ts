@@ -8,24 +8,32 @@ test.describe("admin portal smoke", () => {
     await expect(page.getByRole("heading", { name: "Staff sign in" })).toBeVisible();
   });
 
-  test("offers no self-service registration", async ({ page }) => {
+  /** LOG-016: staff sign in with a password only, so no Google button is offered. */
+  test("offers no Google sign-in and no registration link", async ({ page }) => {
     await page.goto("/login");
 
-    await expect(page.getByRole("link", { name: /register/i })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /google/i })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /register|sign up/i })).toHaveCount(0);
   });
 
-  test("reaches the backend through the api client", async ({ page }) => {
+  test("protects the upgrade requests route", async ({ page }) => {
+    await page.goto("/upgrade-requests");
+
+    await expect(page).toHaveURL(/\/login$/);
+  });
+
+  test("reaches the backend and reports invalid credentials generically", async ({ page }) => {
     await page.goto("/login");
 
-    await page.getByLabel("Email").fill("staff@example.com");
-    await page.getByLabel("Password").fill("correct-horse-battery-staple");
+    await page.getByLabel("Email").fill("nobody@example.com");
+    await page.getByLabel("Password").fill("definitely-not-the-password");
 
     const [response] = await Promise.all([
-      page.waitForResponse((res) => res.url().includes("/api/v1/auth/login")),
+      page.waitForResponse((res) => res.url().includes("/api/auth/login")),
       page.getByRole("button", { name: "Sign in" }).click(),
     ]);
 
-    // SCAFFOLD: stub handler. Change to 200 when the Login module lands.
-    expect(response.status()).toBe(501);
+    expect(response.status()).toBe(401);
+    await expect(page.getByText("Invalid email or password.")).toBeVisible();
   });
 });

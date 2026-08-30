@@ -47,6 +47,18 @@ export class ApiClient {
     return this.#send<TResponse>("POST", path, body, options);
   }
 
+  put<TResponse>(path: string, body?: unknown, options?: RequestOptions): Promise<TResponse> {
+    return this.#send<TResponse>("PUT", path, body, options);
+  }
+
+  /**
+   * Multipart upload. The body is passed through untouched and no Content-Type is set, so the
+   * browser can add the multipart boundary - setting it by hand produces an unparseable request.
+   */
+  postForm<TResponse>(path: string, form: FormData, options?: RequestOptions): Promise<TResponse> {
+    return this.#send<TResponse>("POST", path, form, options);
+  }
+
   async #send<TResponse>(
     method: string,
     path: string,
@@ -58,7 +70,10 @@ export class ApiClient {
       ...options?.headers,
     };
 
-    if (body !== undefined) {
+    const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
+
+    // Only JSON bodies get an explicit Content-Type; FormData must set its own boundary.
+    if (body !== undefined && !isFormData) {
       headers["Content-Type"] = "application/json";
     }
 
@@ -80,7 +95,7 @@ export class ApiClient {
       response = await this.#fetch(`${this.#baseUrl}${path}`, {
         method,
         headers,
-        body: body === undefined ? undefined : JSON.stringify(body),
+        body: body === undefined ? undefined : isFormData ? (body as FormData) : JSON.stringify(body),
         signal,
       });
     } catch (cause) {
@@ -91,7 +106,14 @@ export class ApiClient {
       throw new ApiError(response.status, `${method} ${path} failed with ${response.status}.`, await readProblem(response));
     }
 
-    if (response.status === 204) {
+    // 204 and 202 carry no body; so does any response the server sent without content.
+    if (response.status === 204 || response.status === 202) {
+      return undefined as TResponse;
+    }
+
+    const contentType = response.headers.get("content-type") ?? "";
+
+    if (!contentType.includes("json")) {
       return undefined as TResponse;
     }
 

@@ -3,9 +3,9 @@ using System.ComponentModel.DataAnnotations;
 namespace Unify.Infrastructure.Security;
 
 /// <summary>
-/// Bound from the "Jwt" configuration section. Every value here comes from the environment -
-/// appsettings.json ships blanks on purpose so a missing secret fails loudly at startup
-/// instead of silently signing tokens with a committed default.
+/// Bound from the "Jwt" section. Every value comes from the environment - appsettings.json
+/// ships blanks so a missing secret fails loudly at startup rather than silently signing tokens
+/// with a committed default.
 /// </summary>
 public sealed class JwtOptions
 {

@@ -19,7 +19,10 @@ public sealed class RateLimitingOptions
 
     public RateLimitWindow Login { get; set; } = new() { PermitLimit = 10, WindowMinutes = 15 };
 
-    public RateLimitWindow PasswordReset { get; set; } = new() { PermitLimit = 3, WindowMinutes = 60 };
+    public RateLimitWindow PasswordReset { get; set; } = new() { PermitLimit = 3, WindowMinutes = 1 };
+
+    /// <summary>EVR-006. Complements the per-account throttle inside the handler.</summary>
+    public RateLimitWindow ResendVerification { get; set; } = new() { PermitLimit = 3, WindowMinutes = 60 };
 
     public RateLimitWindow Global { get; set; } = new() { PermitLimit = 300, WindowMinutes = 1 };
 }
@@ -30,4 +33,5 @@ public static class RateLimitPolicies
     public const string Registration = "registration";
     public const string Login = "login";
     public const string PasswordReset = "password-reset";
+    public const string ResendVerification = "resend-verification";
 }

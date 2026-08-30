@@ -23,9 +23,7 @@ internal sealed class HttpContextCurrentUser : ICurrentUser
     public bool IsAuthenticated => Principal?.Identity?.IsAuthenticated ?? false;
 
     public Guid? UserId =>
-        Guid.TryParse(Principal?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value, out Guid id)
-            ? id
-            : null;
+        Guid.TryParse(Principal?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value, out Guid id) ? id : null;
 
     public string? Email => Principal?.FindFirst(JwtRegisteredClaimNames.Email)?.Value;
 
@@ -34,9 +32,7 @@ internal sealed class HttpContextCurrentUser : ICurrentUser
             ? []
             : [.. Principal
                 .FindAll(UnifyClaimTypes.Role)
-                .Select(claim => Enum.TryParse(claim.Value, out RoleName role)
-                    ? (RoleName?)role
-                    : null)
+                .Select(claim => Enum.TryParse(claim.Value, out RoleName role) ? (RoleName?)role : null)
                 .Where(role => role is not null)
                 .Select(role => role!.Value)];
 
@@ -51,10 +47,40 @@ internal sealed class HttpContextCurrentUser : ICurrentUser
 
             return Principal?.FindFirst(UnifyClaimTypes.TokenType)?.Value switch
             {
-                TokenTypeValues.PasswordChange => TokenScope.PasswordChangeOnly,
+                TokenTypeValues.PasswordChangeRequired => TokenScope.PasswordChangeRequired,
                 TokenTypeValues.Full => TokenScope.Full,
                 _ => null,
             };
+        }
+    }
+
+    public Guid? SessionId =>
+        Guid.TryParse(Principal?.FindFirst(UnifyClaimTypes.SessionId)?.Value, out Guid id) ? id : null;
+
+    /// <summary>
+    /// Prefers X-Forwarded-For when present, since the API is expected to sit behind a proxy in
+    /// every deployed environment and the socket address would otherwise be the proxy's.
+    /// Only the first hop is taken - the rest of the chain is attacker-controllable.
+    /// </summary>
+    public string? IpAddress
+    {
+        get
+        {
+            HttpContext? context = _httpContextAccessor.HttpContext;
+
+            if (context is null)
+            {
+                return null;
+            }
+
+            string? forwarded = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+
+            if (!string.IsNullOrWhiteSpace(forwarded))
+            {
+                return forwarded.Split(',')[0].Trim();
+            }
+
+            return context.Connection.RemoteIpAddress?.ToString();
         }
     }
 }

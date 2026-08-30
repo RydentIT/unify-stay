@@ -5,45 +5,87 @@ using Unify.Domain.Auditing;
 
 namespace Unify.Infrastructure.Persistence.Repositories;
 
-/// <summary>Append-only writer for the audit_logs table. Deliberately offers no update or delete.</summary>
+/// <summary>Append-only writer for audit_logs. Deliberately offers no update or delete.</summary>
 internal sealed class AuditLogRepository : IAuditLogRepository
 {
-    private const string InsertSql = """
-        INSERT INTO audit_logs (
-            id, action, actor_user_id, subject_type, subject_id,
-            ip_address, user_agent, metadata, occurred_at_utc)
-        VALUES (
-            @Id, @Action, @ActorUserId, @SubjectType, @SubjectId,
-            CAST(@IpAddress AS inet), @UserAgent, CAST(@Metadata AS jsonb), @OccurredAtUtc);
-        """;
-
     private readonly IDbConnectionFactory _connectionFactory;
 
-    public AuditLogRepository(IDbConnectionFactory connectionFactory) =>
-        _connectionFactory = connectionFactory;
+    public AuditLogRepository(IDbConnectionFactory connectionFactory) => _connectionFactory = connectionFactory;
 
     public async Task AppendAsync(AuditLogEntry entry, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(entry);
 
-        await using DbConnection connection = await _connectionFactory
-            .OpenConnectionAsync(cancellationToken)
-            .ConfigureAwait(false);
+        await using DbConnection connection = await OpenAsync(cancellationToken).ConfigureAwait(false);
 
         await connection.ExecuteAsync(new CommandDefinition(
-            InsertSql,
+            """
+            INSERT INTO audit_logs
+                (id, user_id, email, provider, ip_address, action_type, fields_changed, occurred_at)
+            VALUES (@Id, @UserId, @Email, @Provider, @IpAddress, @ActionType, @FieldsChanged, @OccurredAt);
+            """,
             new
             {
                 entry.Id,
-                entry.Action,
-                entry.ActorUserId,
-                entry.SubjectType,
-                entry.SubjectId,
+                entry.UserId,
+                entry.Email,
+                entry.Provider,
                 entry.IpAddress,
-                entry.UserAgent,
-                Metadata = entry.MetadataJson,
-                entry.OccurredAtUtc,
+                entry.ActionType,
+                entry.FieldsChanged,
+                entry.OccurredAt,
             },
             cancellationToken: cancellationToken)).ConfigureAwait(false);
+    }
+
+    public async Task<IReadOnlyList<AuditLogEntry>> ListForUserAsync(
+        Guid userId,
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        await using DbConnection connection = await OpenAsync(cancellationToken).ConfigureAwait(false);
+
+        IEnumerable<AuditRow> rows = await connection.QueryAsync<AuditRow>(new CommandDefinition(
+            """
+            SELECT id             AS Id,
+                   user_id        AS UserId,
+                   email          AS Email,
+                   provider       AS Provider,
+                   ip_address     AS IpAddress,
+                   action_type    AS ActionType,
+                   fields_changed AS FieldsChanged,
+                   occurred_at    AS OccurredAt
+            FROM   audit_logs
+            WHERE  user_id = @UserId
+            ORDER BY occurred_at DESC
+            LIMIT @Limit;
+            """,
+            new { UserId = userId, Limit = limit },
+            cancellationToken: cancellationToken)).ConfigureAwait(false);
+
+        return [.. rows.Select(row => new AuditLogEntry(
+            row.Id,
+            row.ActionType,
+            row.OccurredAt,
+            row.UserId,
+            row.Email,
+            row.Provider,
+            row.IpAddress,
+            row.FieldsChanged))];
+    }
+
+    private Task<DbConnection> OpenAsync(CancellationToken cancellationToken) =>
+        _connectionFactory.OpenConnectionAsync(cancellationToken);
+
+    private sealed class AuditRow
+    {
+        public Guid Id { get; init; }
+        public Guid? UserId { get; init; }
+        public string? Email { get; init; }
+        public string? Provider { get; init; }
+        public string? IpAddress { get; init; }
+        public string ActionType { get; init; } = string.Empty;
+        public string? FieldsChanged { get; init; }
+        public DateTimeOffset OccurredAt { get; init; }
     }
 }

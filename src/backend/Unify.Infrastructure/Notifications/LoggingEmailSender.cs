@@ -4,9 +4,11 @@ using Unify.Application.Abstractions.Notifications;
 namespace Unify.Infrastructure.Notifications;
 
 /// <summary>
-/// Development stand-in that writes the message to the log instead of sending it. The real
-/// provider is intentionally unchosen until the cloud target is settled; swapping it in means
-/// registering a different IEmailSender in DependencyInjection and nothing else.
+/// Writes the message to the log instead of sending it.
+///
+/// The body is logged in full and on purpose: during local development the verification and
+/// reset links are only obtainable this way, so truncating them would make the flows untestable
+/// without a mail catcher. This sender must never be selected outside development.
 /// </summary>
 internal sealed class LoggingEmailSender : IEmailSender
 {
@@ -19,9 +21,10 @@ internal sealed class LoggingEmailSender : IEmailSender
         ArgumentNullException.ThrowIfNull(message);
 
         _logger.LogInformation(
-            "Email not sent (no provider configured). To: {Recipient} Subject: {Subject}",
+            "EMAIL (not sent - logging provider)\nTo: {Recipient}\nSubject: {Subject}\n{Body}",
             message.To,
-            message.Subject);
+            message.Subject,
+            message.TextBody ?? message.HtmlBody);
 
         return Task.CompletedTask;
     }

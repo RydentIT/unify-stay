@@ -3,53 +3,52 @@ using Unify.Domain.Common;
 namespace Unify.Domain.Auditing;
 
 /// <summary>
-/// An append-only record of a security-relevant action. Never updated or deleted by
-/// application code - the table grants no UPDATE/DELETE to the app role.
+/// An append-only record of a security-relevant action.
+///
+/// Every field except the action and timestamp is nullable by design: an entry may describe an
+/// anonymous attempt (failed login on an unknown address), and the email/provider are captured
+/// as values rather than as a foreign key so the trail survives account deletion (BR-SET-004).
 /// </summary>
 public sealed class AuditLogEntry : Entity
 {
     public AuditLogEntry(
         Guid id,
-        string action,
-        Guid? actorUserId,
-        string? subjectType,
-        string? subjectId,
-        string? ipAddress,
-        string? userAgent,
-        string? metadataJson,
-        DateTimeOffset occurredAtUtc)
+        string actionType,
+        DateTimeOffset occurredAt,
+        Guid? userId = null,
+        string? email = null,
+        string? provider = null,
+        string? ipAddress = null,
+        string? fieldsChanged = null)
         : base(id)
     {
-        if (string.IsNullOrWhiteSpace(action))
+        if (string.IsNullOrWhiteSpace(actionType))
         {
-            throw new DomainException("Audit log action must not be empty.");
+            throw new DomainException("Audit log action type must not be empty.");
         }
 
-        Action = action;
-        ActorUserId = actorUserId;
-        SubjectType = subjectType;
-        SubjectId = subjectId;
+        ActionType = actionType;
+        OccurredAt = occurredAt;
+        UserId = userId;
+        Email = email;
+        Provider = provider;
         IpAddress = ipAddress;
-        UserAgent = userAgent;
-        MetadataJson = metadataJson;
-        OccurredAtUtc = occurredAtUtc;
+        FieldsChanged = fieldsChanged;
     }
 
-    /// <summary>Dotted event name, e.g. "user.register.succeeded".</summary>
-    public string Action { get; }
+    /// <summary>Dotted event name, e.g. "user.login.locked".</summary>
+    public string ActionType { get; }
 
-    /// <summary>Null for anonymous actions such as a failed login on an unknown address.</summary>
-    public Guid? ActorUserId { get; }
+    public Guid? UserId { get; }
 
-    public string? SubjectType { get; }
+    public string? Email { get; }
 
-    public string? SubjectId { get; }
+    public string? Provider { get; }
 
     public string? IpAddress { get; }
 
-    public string? UserAgent { get; }
+    /// <summary>JSON naming what changed, where the relevant spec calls for it.</summary>
+    public string? FieldsChanged { get; }
 
-    public string? MetadataJson { get; }
-
-    public DateTimeOffset OccurredAtUtc { get; }
+    public DateTimeOffset OccurredAt { get; }
 }

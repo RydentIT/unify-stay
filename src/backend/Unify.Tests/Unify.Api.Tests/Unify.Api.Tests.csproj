@@ -10,7 +10,7 @@
     stub, so these stay fast enough to run on every push alongside the unit tests.
   -->
   <ItemGroup>
-    <ProjectReference Include="..\Unify.Api\Unify.Api.csproj" />
+    <ProjectReference Include="..\..\Unify.Api\Unify.Api.csproj" />
   </ItemGroup>
 
   <ItemGroup>

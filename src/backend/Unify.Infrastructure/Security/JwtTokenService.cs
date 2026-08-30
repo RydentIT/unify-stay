@@ -18,14 +18,14 @@ internal sealed class JwtTokenService : ITokenService
     private readonly JsonWebTokenHandler _handler = new();
     private readonly JwtOptions _options;
     private readonly SigningCredentials _signingCredentials;
-    private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly IDateTimeProvider _clock;
 
-    public JwtTokenService(IOptions<JwtOptions> options, IDateTimeProvider dateTimeProvider)
+    public JwtTokenService(IOptions<JwtOptions> options, IDateTimeProvider clock)
     {
         ArgumentNullException.ThrowIfNull(options);
 
         _options = options.Value;
-        _dateTimeProvider = dateTimeProvider;
+        _clock = clock;
 
         byte[] keyBytes = Encoding.UTF8.GetBytes(_options.SigningKey);
 
@@ -48,26 +48,33 @@ internal sealed class JwtTokenService : ITokenService
     {
         ArgumentNullException.ThrowIfNull(roles);
 
-        DateTimeOffset issuedAt = _dateTimeProvider.UtcNow;
+        DateTimeOffset issuedAt = _clock.UtcNow;
 
-        int lifetimeMinutes = scope == TokenScope.PasswordChangeOnly
-            ? _options.PasswordChangeTokenLifetimeMinutes
-            : _options.AccessTokenLifetimeMinutes;
+        // Both limited scopes are short-lived recovery tokens that exist only to carry the user
+        // from login to the one endpoint that clears their gate, so they share a lifetime.
+        int lifetimeMinutes = scope == TokenScope.Full
+            ? _options.AccessTokenLifetimeMinutes
+            : _options.PasswordChangeTokenLifetimeMinutes;
 
         DateTimeOffset expiresAt = issuedAt.AddMinutes(lifetimeMinutes);
+
+        string tokenType = scope switch
+        {
+            TokenScope.PasswordChangeRequired => TokenTypeValues.PasswordChangeRequired,
+            TokenScope.ProfileCompletionRequired => TokenTypeValues.ProfileCompletionRequired,
+            _ => TokenTypeValues.Full,
+        };
 
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, userId.ToString()),
             new(JwtRegisteredClaimNames.Email, email),
             new(JwtRegisteredClaimNames.Jti, Guid.CreateVersion7().ToString()),
-            new(UnifyClaimTypes.TokenType, scope == TokenScope.PasswordChangeOnly
-                ? TokenTypeValues.PasswordChange
-                : TokenTypeValues.Full),
+            new(UnifyClaimTypes.TokenType, tokenType),
         };
 
-        // A password-change token carries no roles at all: even if an endpoint forgot the
-        // scope policy, there is nothing on the token for a role check to succeed against.
+        // A limited-scope token carries no roles at all: even if an endpoint forgot its policy,
+        // there is nothing on the token for a role check to succeed against.
         if (scope == TokenScope.Full)
         {
             claims.AddRange(roles.Select(role => new Claim(UnifyClaimTypes.Role, role.ToString())));

@@ -45,6 +45,10 @@ internal static class RateLimitingExtensions
                 RateLimitPolicies.PasswordReset,
                 context => CreatePartition(context, options.PasswordReset));
 
+            limiter.AddPolicy(
+                RateLimitPolicies.ResendVerification,
+                context => CreatePartition(context, options.ResendVerification));
+
             limiter.OnRejected = async (context, cancellationToken) =>
             {
                 if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out TimeSpan retryAfter))
